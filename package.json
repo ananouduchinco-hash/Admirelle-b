@@ -1,0 +1,11 @@
+{
+  "name": "admirelle-b-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Site e-commerce Admirelle B (site statique + fonctions Netlify)",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "fedapay": "^1.2.5",
+    "firebase-admin": "^12.7.0"
+  }
+}

@@ -1,0 +1,64 @@
+rules_version = '2';
+// Admirelle B — règles de sécurité Firestore
+// À copier dans : console Firebase > Firestore Database > Règles > Publier
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function str(v, max) { return v is string && v.size() <= max; }
+
+    // Catalogue : lecture publique des pièces publiées, écriture par l'admin
+    match /products/{id} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+    }
+    match /collections/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Commandes : créées uniquement par le serveur (prix recalculés), lues par la cliente concernée et l'admin
+    match /orders/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+      allow create: if false;
+    }
+
+    // Demandes sur mesure et messages : envoi public contrôlé, lecture par l'admin
+    match /customRequests/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['modele','type','mensurations','rdvMesures','tissu','couleur','coupe','occasion','dateSouhaitee','budget','details','inspiration','client','status','uid','createdAt'])
+                    && request.resource.data.status == 'nouvelle'
+                    && str(request.resource.data.client.nom, 120)
+                    && str(request.resource.data.client.tel, 40)
+                    && str(request.resource.data.details, 3000);
+      allow read, update, delete: if isAdmin();
+    }
+    match /messages/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['nom','tel','email','sujet','message','lu','createdAt'])
+                    && request.resource.data.lu == false
+                    && str(request.resource.data.nom, 120)
+                    && str(request.resource.data.message, 4000);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Espace cliente
+    match /customers/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if (signedIn() && request.auth.uid == uid
+                                && request.resource.data.keys().hasOnly(['name','email','phone','address','city','createdAt','updatedAt']))
+                            || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Liste des administratrices (créée à la main dans la console)
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}
