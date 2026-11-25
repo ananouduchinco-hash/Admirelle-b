@@ -2350,6 +2350,15 @@ window.AB_DEFAULT_SETTINGS = {
      ===================================================================== */
   AB.pages.home = async () => {
     const [products, collections] = await Promise.all([AB.data.products(), AB.data.collections()]);
+    if (!products.length) {
+      return {
+        title: "Admirelle B · Maison de mode féminine haut de gamme et sur mesure",
+        html: `<section class="phead"><div class="wrap"><p class="kicker">${esc(S.heroKicker)}</p>
+          <h1 class="h1">La boutique ouvre <em>très bientôt</em></h1>
+          <p>Les créations arrivent en ligne. En attendant, la styliste vous répond sur WhatsApp pour toute commande ou création sur mesure.</p>
+          <div class="btns4" style="margin-top:24px"><a class="btn" href="${AB.wa(S.whatsapp, "Bonjour Admirelle B, je souhaite des informations sur vos créations.")}" target="_blank" rel="noopener">Écrire sur WhatsApp</a><a class="btn btn--ghost" href="#/sur-mesure">Créer sur mesure</a></div></div></section>`
+      };
+    }
     const byId = (id) => products.find((p) => p.id === id);
     const ph = (p, n = 0) => ((p && p.images) || [])[n] || "";
     const n = (k) => `${k} création${k > 1 ? "s" : ""}`;
